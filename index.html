@@ -1595,29 +1595,28 @@
     );
 
     function filterGames() {
-      const minPlayersFilter = parseInt(minPlayersInput.value) || 1;
-      let maxPlayersFilter = parseInt(maxPlayersInput.value) || Infinity;
-      if (maxPlayersFilter === 0) maxPlayersFilter = Infinity;
-
-      const selectedTags = tagButtons
-        .filter(btn => btn.classList.contains('selected'))
-        .map(btn => btn.dataset.tag);
-
-      const filtered = games.filter(game => {
-        const effectiveMax = game.maxPlayers === 0 ? Infinity : game.maxPlayers;
-
-        const playersMatch = (
-          game.minPlayers <= maxPlayersFilter &&
-          effectiveMax >= minPlayersFilter
-        );
-        const tagsMatch = selectedTags.length === 0 ||
-                          selectedTags.every(t => game.tags.includes(t));
-        return playersMatch && tagsMatch;
-      });
-
-      renderGames(filtered);
-    }
-
+	  const minPlayersFilter = parseInt(minPlayersInput.value) || 1;
+	  let maxPlayersFilter = parseInt(maxPlayersInput.value) || Infinity;
+	  if (maxPlayersFilter === 0) maxPlayersFilter = Infinity;
+	
+	  const selectedTags = tagButtons
+	    .filter(btn => btn.classList.contains('selected'))
+	    .map(btn => btn.dataset.tag);
+	
+	  const filtered = games.filter(game => {
+	    const playersMatch = (
+	      game.minPlayers <= maxPlayersFilter &&
+	      game.maxPlayers >= minPlayersFilter
+	    );
+	
+	    const tagsMatch = selectedTags.length === 0 ||
+	                      selectedTags.every(t => game.tags.includes(t));
+	
+	    return playersMatch && tagsMatch;
+	  });
+	
+	  renderGames(filtered);
+	}
     function renderGames(gamesArray) {
       gameContainer.innerHTML = gamesArray.map(game => createGameCard(game)).join('');
     }
