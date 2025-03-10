@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Game Finder</title>
+  <style>
+    :root {
+      --primary-color: #f5f5f5;
+      --secondary-color: #1a1a1a;
+      --accent-color: #6f42c1; 
+      --background-color: #121212;
+      --text-color: #f5f5f5;
+      --container-bg: rgba(30, 30, 30, 0.6);
+      --blur-level: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .ball-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; 
+      z-index: -1;          
+      overflow: hidden;     
+    }
+
+    .ball {
+      position: absolute;
+      top: -10%; 
+      border-radius: 50%; 
+      animation: ball-fall linear infinite;
+      opacity: 1;
+
+    }
+
+    @keyframes ball-fall {
+      0% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(2000vh);
+      }
+    }
+
+    .blurred {
+      filter: blur(var(--blur-level));
+      pointer-events: none; 
+      user-select: none;    
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+      transition: filter 0.3s ease; 
+    }
+
+    .filters {
+      background: var(--container-bg);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      margin-bottom: 30px;
+      backdrop-filter: blur(5px);
+    }
+
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    input[type="number"] {
+      padding: 10px 14px;
+      border: 1px solid var(--accent-color);
+      border-radius: 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-color);
+      font-size: 1em;
+      outline: none;
+      transition: box-shadow 0.2s;
+      width: 100px;
+    }
+
+    input[type="number"]:focus {
+      box-shadow: 0 0 5px var(--accent-color);
+    }
+
+    #tagButtons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tag-button {
+      border: none;
+      border-radius: 12px;
+      padding: 6px 12px;
+      cursor: pointer;
+      color: #fff;
+      font-size: 0.9em;
+      transition: transform 0.1s, opacity 0.2s;
+      opacity: 0.8;
+    }
+
+    .tag-button:hover {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+
+    .tag-button.selected {
+      box-shadow: 0 0 0 2px var(--accent-color);
+      opacity: 1;
+    }
+
+    .tag-button[data-tag="Sandbox"] { background-color: #FF8C42; }
+    .tag-button[data-tag="Minigame"] { background-color: #30D5C8; }
+    .tag-button[data-tag="Co-op"] { background-color: #FFD700; }
+    .tag-button[data-tag="Versus"] { background-color: #FF474C; }
+    .tag-button[data-tag="Chaotic"] { background-color: #8A2BE2; }
+    .tag-button[data-tag="Party"] { background-color: #FF69B4; }
+    .tag-button[data-tag="Horror"] { background-color: #800020; }
+    .tag-button[data-tag="Racing"] { background-color: #FF4500; }
+    .tag-button[data-tag="Sports"] { background-color: #1E90FF; }
+    .tag-button[data-tag="Modded"] { background-color: #00FF7F; }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 25px;
+    }
+
+    .game-link {
+      text-decoration: none;
+    }
+
+    .game-card {
+      background: var(--container-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+      backdrop-filter: blur(5px);
+    }
+
+    .game-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.7);
+    }
+
+    .game-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .game-info {
+      padding: 15px;
+    }
+
+    .game-title {
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+
+    .player-count {
+      color: #aaa;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .tag {
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      opacity: 0.9;
+    }
+
+    #randomGameBtn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1em;
+      cursor: pointer;
+      background: linear-gradient(45deg, #6f42c1, #bf5af2); 
+      color: #fff;
+      transition: box-shadow 0.3s ease, transform 0.2s;
+    }
+    #randomGameBtn:hover {
+      box-shadow: 0 0 10px rgba(191,90,242,0.7);
+      transform: scale(1.05);
+    }
+
+    #modalOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.7);
+      display: none; 
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;  
+    }
+
+    #modalOverlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background-color: var(--container-bg);
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      animation: fadeInUp 0.4s ease;
+      position: relative;
+    }
+
+    @keyframes fadeInUp {
+      0% {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-section {
+      display: none;
+    }
+    .modal-section.active {
+      display: block;
+    }
+
+    #randomInputSection label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    #playerCountInput {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--accent-color);
+      border-radius: 6px;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-color);
+      font-size: 1em;
+      outline: none;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+    }
+
+    #modalTagButtons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 15px;
+    }
+
+    .modal-tag {
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .modal-tag:hover {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+    .modal-tag.selected {
+      box-shadow: 0 0 0 2px var(--accent-color);
+      opacity: 1;
+    }
+
+    #getRandomGameBtn {
+      padding: 12px 24px;
+      border-radius: 25px;
+      border: none;
+      background: linear-gradient(45deg, #6f42c1, #bf5af2);
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: box-shadow 0.3s ease, transform 0.2s;
+    }
+    #getRandomGameBtn:hover {
+      box-shadow: 0 0 10px rgba(191,90,242,0.7);
+      transform: scale(1.05);
+    }
+
+    #randomResultSection .game-card {
+      margin: 0 auto;
+    }
+
+    #randomResultSection .game-card {
+      max-width: 400px;
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      80% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+    .bounce-in {
+      animation: bounceIn 0.7s forwards;
+    }
+  </style>
+</head>
+<body>
+  <!-- The container for our falling balls -->
+  <div class="ball-container" id="ballContainer"></div>
+
+  <div class="container" id="mainContainer">
+    <div class="filters">
+      <div class="filter-group">
+        <div>
+          <label for="minPlayers">Minimum Players:</label>
+          <input type="number" id="minPlayers" min="1" value="1">
+        </div>
+        <div>
+          <label for="maxPlayers">Maximum Players:</label>
+          <input type="number" id="maxPlayers" min="1" value="0">
+        </div>
+        <!-- PRETTY RANDOM BUTTON -->
+        <button id="randomGameBtn">Pick Random Game</button>
+      </div>
+      <div>
+        <label>Tags:</label>
+        <div id="tagButtons">
+          <button class="tag-button" data-tag="Sandbox">🏖️ Sandbox</button>
+          <button class="tag-button" data-tag="Minigame">🎮 Minigame</button>
+          <button class="tag-button" data-tag="Co-op">🤝 Co-op</button>
+          <button class="tag-button" data-tag="Versus">⚔️ Versus</button>
+          <button class="tag-button" data-tag="Chaotic">🔥 Chaotic</button>
+          <button class="tag-button" data-tag="Party">🎉 Party</button>
+          <button class="tag-button" data-tag="Horror">👻 Horror</button>
+          <button class="tag-button" data-tag="Racing">🏎️ Racing</button>
+          <button class="tag-button" data-tag="Sports">⚽ Sports</button>
+          <button class="tag-button" data-tag="Modded">🛠️ Modded</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-grid" id="gameContainer"></div>
+  </div>
+
+  <!-- MODAL OVERLAY -->
+  <div id="modalOverlay">
+    <div class="modal-box" id="modalBox">
+      <!-- STEP 1: Ask #players & tags -->
+      <div class="modal-section" id="randomInputSection">
+        <h2 style="margin-bottom: 10px;">Pick Your Criteria</h2>
+        <label for="playerCountInput">How many players?</label>
+        <input type="number" id="playerCountInput" min="1" value="0">
+
+        <label>Select desired tags (optional):</label>
+        <div id="modalTagButtons">
+          <!-- We'll fill these programmatically to match the main tags. -->
+        </div>
+
+        <button id="getRandomGameBtn">Get Random Game</button>
+      </div>
+
+      <!-- STEP 2: Show the randomly chosen game -->
+      <div class="modal-section" id="randomResultSection"></div>
+    </div>
+  </div>
+
+  <script>
+
+    const BALL_CONFIG = {
+      count: 600,      
+      minSize: 5,      
+      maxSize: 20,     
+      minDuration: 40,  
+      maxDuration: 96, 
+      minDelay: 0,     
+      maxDelay: 40,     
+      colors: [
+        "#ffffff", "#ffccff", "#ff66ff", "#cc66ff", "#6600cc",
+        "#0033cc", "#3399ff", "#00ffff", "#ffcc00", "#ff3300",
+        "#990099", "#000033", "#222244", "#660033"
+      ],
+    };
+
+    const ballContainer = document.getElementById('ballContainer');
+
+    function initBalls() {
+      ballContainer.innerHTML = "";
+      for (let i = 0; i < BALL_CONFIG.count; i++) {
+        const ball = document.createElement('div');
+        ball.className = 'ball';
+
+        const leftPercent = Math.random() * 100;
+
+        const delay = randomBetween(BALL_CONFIG.minDelay, BALL_CONFIG.maxDelay);
+
+        const duration = randomBetween(BALL_CONFIG.minDuration, BALL_CONFIG.maxDuration);
+
+        const size = randomBetween(BALL_CONFIG.minSize, BALL_CONFIG.maxSize);
+
+        const colorIndex = Math.floor(Math.random() * BALL_CONFIG.colors.length);
+        const chosenColor = BALL_CONFIG.colors[colorIndex];
+
+        ball.style.left = leftPercent + "%";
+        ball.style.animationDuration = duration + "s";
+        ball.style.animationDelay = delay + "s";
+        ball.style.width = size + "px";
+        ball.style.height = size + "px";
+        ball.style.backgroundColor = chosenColor;
+
+        ball.style.boxShadow = `
+          0 0 5px ${chosenColor},
+          0 0 10px ${chosenColor},
+          0 0 20px ${chosenColor},
+          0 0 40px ${chosenColor}
+        `;
+
+        ballContainer.appendChild(ball);
+      }
+    }
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    const tagEmojis = {
+      "Sandbox": "🏖️",
+      "Minigame": "🎮",
+      "Co-op": "🤝",
+      "Versus": "⚔️",
+      "Chaotic": "🔥",
+      "Party": "🎉",
+      "Horror": "👻",
+      "Racing": "🏎️",
+      "Sports": "⚽",
+      "Modded": "🛠️",
+    };
+
+    const tagColors = {
+      "Sandbox": "#FF8C42",
+      "Minigame": "#30D5C8",
+      "Co-op": "#FFD700",
+      "Versus": "#FF474C",
+      "Chaotic": "#8A2BE2",
+      "Party": "#FF69B4",
+      "Modded": "#00FF7F",
+      "Horror": "#800020",
+      "Racing": "#FF4500",
+      "Sports": "#1E90FF"
+    };
+
+    const games = [
+{
+		"name": "Amazing Frog?",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/332570/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Sandbox", "Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/332570/"
+	  },
+	  {
+		"name": "Amazing Frog? 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1559680/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Sandbox", "Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1559680/"
+	  },
+	  {
+		"name": "Among Us",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/945360/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 100,
+		"tags": ["Co-op", "Versus", "Chaotic", "Party", "Modded"],
+		"steamUrl": "https://store.steampowered.com/app/945360/"
+	  },
+	  {
+		"name": "BattleBlock Theater",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/238460/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/238460/"
+	  },
+	  {
+		"name": "BFF or Die",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/652360/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/652360/"
+	  },
+	  {
+		"name": "Biped",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1071870/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1071870/"
+	  },
+	  {
+		"name": "Blazing Beaks",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/585710/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/585710/"
+	  },
+	  {
+		"name": "Blazing Sails",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1158940/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4, 
+		"tags": ["Versus", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1158940/"
+	  },
+	  {
+		"name": "Block'Em!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1529220/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/1529220/"
+	  },
+	  {
+		"name": "Bloody Trapland",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/257750/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/257750/"
+	  },
+	  {
+		"name": "Bloody Trapland 2: Curiosity",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/579840/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/579840/"
+	  },
+	  {
+		"name": "Bloons TD 6",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/960090/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/960090/"
+	  },
+	  {
+		"name": "BOMBFEST",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/729640/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Minigame", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/729640/"
+	  },
+	  {
+		"name": "Boo Men",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1715730/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 5,
+		"tags": ["Horror", "Co-op"],
+		"steamUrl": "https://store.steampowered.com/app/1715730/"
+	  },
+	  {
+		"name": "Boomerang Fu",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/965680/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/965680/"
+	  },
+	  {
+		"name": "Bopl Battle",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1686940/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1686940/"
+	  },
+	  {
+		"name": "Brawlhalla",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/291550/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/291550/"
+	  },
+	  {
+		"name": "Bread & Fred",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1607680/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1607680/"
+	  },
+	  {
+		"name": "Broforce",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/274190/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/274190/"
+	  },
+	  {
+		"name": "Burg",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1959960/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Sandbox", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1959960/"
+	  },
+	  {
+		"name": "Can't Drive This",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/466980/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Racing", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/466980/"
+	  },
+	  {
+		"name": "Castle Crashers",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/204360/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/204360/"
+	  },
+	  {
+		"name": "Catastronauts",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/737890/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/737890/"
+	  },
+	  {
+		"name": "Chained Together",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2567870/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2567870/"
+	  },
+	  {
+		"name": "Chambara",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/745790/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/745790/"
+	  },
+	  {
+		"name": "Chickens Madness",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/645650/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/645650/"
+	  },
+	  {
+		"name": "Chivalry 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1824220/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 64,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1824220/"
+	  },
+	  {
+		"name": "Chompies!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2061540/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2061540/"
+	  },
+	  {
+		"name": "Citrus Rampage",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1817020/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1817020/"
+	  },
+	  {
+		"name": "Color Breakers",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1451880/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1451880/"
+	  },
+	  {
+		"name": "Content Warning",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2881650/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2881650/"
+	  },
+	  {
+		"name": "Couch Combat",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1685510/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1685510/"
+	  },
+	  {
+		"name": "Crab Game",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1782210/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 40,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1782210/"
+	  },
+	  {
+		"name": "Cuphead",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/268910/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/268910/"
+	  },
+	  {
+		"name": "Death Squared",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/471810/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/471810/"
+	  },
+	  {
+		"name": "Deceit 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2064870/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 9,
+		"tags": ["Horror", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2064870/"
+	  },
+	  {
+		"name": "Deducto",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1453490/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 100,
+		"tags": ["Versus", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1453490/"
+	  },
+	  {
+		"name": "DEVOUR",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1274570/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Horror", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1274570/"
+	  },
+	  {
+		"name": "Don't Starve Together",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/322330/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 100,
+		"tags": ["Sandbox", "Horror", "Co-op", "Modded"],
+		"steamUrl": "https://store.steampowered.com/app/322330/"
+	  },
+	  {
+		"name": "Doodle Derby",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/916180/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Minigame", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/916180/"
+	  },
+	  {
+		"name": "Dwarven Brawl Bros",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/367260/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/367260/"
+	  },
+	  {
+		"name": "Fight Party",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1617480/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1617480/"
+	  },
+	  {
+		"name": "Embr",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1062830/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1062830/"
+	  },
+	  {
+		"name": "Escape Academy",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1812090/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/1812090/"
+	  },
+	  {
+		"name": "Friends vs Friends",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1785150/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1785150/"
+	  },
+	  {
+		"name": "Gang Beasts",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/285900/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Versus", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/285900/"
+	  },
+	  {
+		"name": "Garry's Mod",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/4000/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 100,
+		"tags": ["Sandbox", "Modded", "Party", "Versus", "Minigame", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/4000/"
+	  },
+	  {
+		"name": "Golf With Your Friends",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/431240/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 12,
+		"tags": ["Sports", "Party", "Co-op"],
+		"steamUrl": "https://store.steampowered.com/app/431240/"
+	  },
+	  {
+		"name": "Guns N Stuff",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1406350/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1406350/"
+	  },
+	  {
+		"name": "Headsnatchers",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/797410/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/797410/"
+	  },
+	  {
+		"name": "Heave Ho",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/905340/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/905340/"
+	  },
+	  {
+		"name": "Hot Shot Burn",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/801750/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/801750/"
+	  },
+	  {
+		"name": "Human Fall Flat",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/477160/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Co-op", "Sandbox", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/477160/"
+	  },
+	  {
+		"name": "Hyper Jam",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/556050/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/556050/"
+	  },
+	  {
+		"name": "Impact Point",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1680550/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1680550/"
+	  },
+	  {
+		"name": "Jelly Brawl",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1278350/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1278350/"
+	  },
+	  {
+		"name": "Job Joust",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2800510/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2800510/"
+	  },
+	  {
+		"name": "Jumping Joe",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1273590/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Minigame", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1273590/"
+	  },
+	  {
+		"name": "Jump Stars",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/486990/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Minigame", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/486990/"
+	  },
+	  {
+		"name": "Just Die Already",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/979070/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Sandbox", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/979070/"
+	  },
+	  {
+		"name": "Keep Talking and Nobody Explodes",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/341800/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/341800/"
+	  },
+	  {
+		"name": "KeyWe",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1242980/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/1242980/"
+	  },
+	  {
+		"name": "Knightfall: A Daring Journey",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1911390/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 16,
+		"tags": ["Racing", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1911390/"
+	  },
+	  {
+		"name": "Last Train Outta' Wormtown",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2318480/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 12,
+		"tags": ["Horror", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2318480/"
+	  },
+	  {
+		"name": "Left 4 Dead 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/550/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Co-op", "Horror", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/550/"
+	  },
+	  {
+		"name": "Lethal Company",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1966720/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 100,
+		"tags": ["Horror", "Co-op", "Chaotic", "Modded"],
+		"steamUrl": "https://store.steampowered.com/app/1966720/"
+	  },
+	  {
+		"name": "Liar's Bar",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/3097560/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/3097560/"
+	  },
+	  {
+		"name": "Lovers in a Dangerous Spacetime",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/252110/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/252110/"
+	  },
+	  {
+		"name": "Make Way",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1445790/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Minigame", "Party", "Racing"],
+		"steamUrl": "https://store.steampowered.com/app/1445790/"
+	  },
+	  {
+		"name": "Mashed",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/281280/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Racing", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/281280/"
+	  },
+	  {
+		"name": "MicroWorks",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1233410/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 16,
+		"tags": ["Minigame", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1233410/"
+	  },
+	  {
+		"name": "Miner Warfare",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/354620/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Versus", "Chaotic", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/354620/"
+	  },
+	  {
+		"name": "Move or Die",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/323850/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Minigame", "Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/323850/"
+	  },
+	  {
+		"name": "Moving Out",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/996770/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/996770/"
+	  },
+	  {
+		"name": "Muck",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1625450/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Sandbox", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1625450/"
+	  },
+	  {
+		"name": "Muddledash",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/769840/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/769840/"
+	  },
+	  {
+		"name": "MY HERO ULTRA RUMBLE",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1607250/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 24,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1607250/"
+	  },
+	  {
+		"name": "Nickelodeon All-Star Brawl",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1414850/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1414850/"
+	  },
+	  {
+		"name": "Octodad: Dadliest Catch",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/224480/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/224480/"
+	  },
+	  {
+		"name": "Out of Space",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/400080/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/400080/"
+	  },
+	  {
+		"name": "Overwatch® 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2357570/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 12,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2357570/"
+	  },
+	  {
+		"name": "Party Crashers",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/657300/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Racing", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/657300/"
+	  },
+	  {
+		"name": "Party Golf",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/538550/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Sports", "Party", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/538550/"
+	  },
+	  {
+		"name": "Party Panic",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/506500/header.jpg",
+		"minPlayers": 2,
+		"maxPlayers": 4,
+		"tags": ["Party", "Minigame", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/506500/"
+	  },
+	  {
+		"name": "Peekaboo",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1048100/header.jpg",
+		"minPlayers": 2,
+		"maxPlayers": 16,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1048100/"
+	  },
+	  {
+		"name": "Perfect Heist 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1521580/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 16,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1521580/"
+	  },
+	  {
+		"name": "Petoons Party",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/911200/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/911200/"
+	  },
+	  {
+		"name": "Pillowheads",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1102000/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1102000/"
+	  },
+	  {
+		"name": "Pizza Possum",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1951230/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1951230/"
+	  },
+	  {
+		"name": "PlateUp!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1599600/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1599600/"
+	  },
+	  {
+		"name": "Pooplers",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1177170/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Minigame", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1177170/"
+	  },
+	  {
+		"name": "Portal 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/620/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Co-op", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/620/"
+	  },
+	  {
+		"name": "Prison Life 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/2125160/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Versus", "Sandbox", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/2125160/"
+	  },
+	  {
+		"name": "Pummel Party",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/880940/header.jpg",
+		"minPlayers": 2,
+		"maxPlayers": 8,
+		"tags": ["Party", "Minigame", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/880940/"
+	  },
+	  {
+		"name": "Raft",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/648800/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Sandbox", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/648800/"
+	  },
+	  {
+		"name": "Redmatch 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1280770/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 16,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1280770/"
+	  },
+	  {
+		"name": "Rogue Company",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/872200/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/872200/"
+	  },
+	  {
+		"name": "ROUNDS",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1557740/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1557740/"
+	  },
+	  {
+		"name": "Rubber Bandits",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1206610/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1206610/"
+	  },
+	  {
+		"name": "Runbow",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/464650/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 9,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/464650/"
+	  },
+	  {
+		"name": "Samurai GUNN",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/239090/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/239090/"
+	  },
+	  {
+		"name": "SCP: Escape Together",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1394270/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 25,
+		"tags": ["Horror", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1394270/"
+	  },
+	  {
+		"name": "SCP: Secret Laboratory",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/700330/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 25,
+		"tags": ["Horror", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/700330/"
+	  },
+	  {
+		"name": "Screaming Chicken: Ultimate Showdown",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1194250/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1194250/"
+	  },
+	  {
+		"name": "Screencheat",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/301970/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Versus", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/301970/"
+	  },
+	  {
+		"name": "Sea King",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1206050/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1206050/"
+	  },
+	  {
+		"name": "Shakes on a Plane",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/964620/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/964620/"
+	  },
+	  {
+		"name": "Sokpop S04: capy hoky",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1209440/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Sports", "Party", "Versus"],
+		"steamUrl": "https://store.steampowered.com/app/1209440/"
+	  },
+	  {
+		"name": "Sons Of The Forest",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1326470/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Sandbox", "Horror", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1326470/"
+	  },
+	  {
+		"name": "SpeedRunners",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/207140/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Racing", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/207140/"
+	  },
+	  {
+		"name": "Spell Swap",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1587810/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1587810/"
+	  },
+	  {
+		"name": "Spelunky",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/239350/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/239350/"
+	  },
+	  {
+		"name": "Spelunky 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/418530/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/418530/"
+	  },
+	  {
+		"name": "SpiderHeck",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1329500/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1329500/"
+	  },
+	  {
+		"name": "Square Brawl",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/394850/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/394850/"
+	  },
+	  {
+		"name": "Stick 'Em Up 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/282780/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/282780/"
+	  },
+	  {
+		"name": "Stick Fight: The Game",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/674940/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/674940/"
+	  },
+	  {
+		"name": "Stick It!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/3095720/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/3095720/"
+	  },
+	  {
+		"name": "Stikbold!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/429330/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 6,
+		"tags": ["Sports", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/429330/"
+	  },
+	  {
+		"name": "SuperSmash",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1077290/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1077290/"
+	  },
+	  {
+		"name": "Super Totally Ultimate Dad Showdown",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1570730/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Chaotic", "Versus"],
+		"steamUrl": "https://store.steampowered.com/app/1570730/"
+	  },
+	  {
+		"name": "TEMPLE of RUBBO",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1927380/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1927380/"
+	  },
+	  {
+		"name": "The Forest",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/242760/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Sandbox", "Horror", "Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/242760/"
+	  },
+	  {
+		"name": "THE GAME OF LIFE 2",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1455630/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/1455630/"
+	  },
+	  {
+		"name": "Tiny Brains",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/253690/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/253690/"
+	  },
+	  {
+		"name": "Toasted!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1299000/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1299000/"
+	  },
+	  {
+		"name": "Tomb Robbing with Friends",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1931870/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party"],
+		"steamUrl": "https://store.steampowered.com/app/1931870/"
+	  },
+	  {
+		"name": "Tools Up!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1004490/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Party", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1004490/"
+	  },
+	  {
+		"name": "Totally Reliable Delivery Service",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1011670/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Chaotic", "Sandbox"],
+		"steamUrl": "https://store.steampowered.com/app/1011670/"
+	  },
+	  {
+		"name": "Tricky Towers",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/437920/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/437920/"
+	  },
+	  {
+		"name": "Ultimate Chicken Horse",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/386940/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 8,
+		"tags": ["Party", "Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/386940/"
+	  },
+	  {
+		"name": "Unplagued",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/3062930/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Co-op", "Horror", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/3062930/"
+	  },
+	  {
+		"name": "Unspottable",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1243960/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Party", "Versus", "Minigame"],
+		"steamUrl": "https://store.steampowered.com/app/1243960/"
+	  },
+	  {
+		"name": "Wanba Warriors",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1021770/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 2,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1021770/"
+	  },
+	  {
+		"name": "Wee Tanks!",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1797680/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 4,
+		"tags": ["Versus", "Chaotic"],
+		"steamUrl": "https://store.steampowered.com/app/1797680/"
+	  },
+	  {
+		"name": "Wobbly Life",
+		"image": "https://cdn.cloudflare.steamstatic.com/steam/apps/1211020/header.jpg",
+		"minPlayers": 1,
+		"maxPlayers": 12, 
+		"tags": ["Sandbox", "Party", "Co-op"],
+		"steamUrl": "https://store.steampowered.com/app/1211020/"
+	  }
+    ];
+
+    const gameContainer = document.getElementById('gameContainer');
+    const minPlayersInput = document.getElementById('minPlayers');
+    const maxPlayersInput = document.getElementById('maxPlayers');
+    const tagButtons = Array.from(document.querySelectorAll('#tagButtons .tag-button'));
+
+    initBalls();
+    renderGames(games);
+
+    [minPlayersInput, maxPlayersInput].forEach(el => el.addEventListener('input', filterGames));
+    tagButtons.forEach(button =>
+      button.addEventListener('click', () => {
+        button.classList.toggle('selected');
+        filterGames();
+      })
+    );
+
+    function filterGames() {
+      const minPlayersFilter = parseInt(minPlayersInput.value) || 1;
+      let maxPlayersFilter = parseInt(maxPlayersInput.value) || Infinity;
+      if (maxPlayersFilter === 0) maxPlayersFilter = Infinity;
+
+      const selectedTags = tagButtons
+        .filter(btn => btn.classList.contains('selected'))
+        .map(btn => btn.dataset.tag);
+
+      const filtered = games.filter(game => {
+        const effectiveMax = game.maxPlayers === 0 ? Infinity : game.maxPlayers;
+
+        const playersMatch = (
+          game.minPlayers <= maxPlayersFilter &&
+          effectiveMax >= minPlayersFilter
+        );
+        const tagsMatch = selectedTags.length === 0 ||
+                          selectedTags.every(t => game.tags.includes(t));
+        return playersMatch && tagsMatch;
+      });
+
+      renderGames(filtered);
+    }
+
+    function renderGames(gamesArray) {
+      gameContainer.innerHTML = gamesArray.map(game => createGameCard(game)).join('');
+    }
+
+    function createGameCard(game) {
+      const maxP = game.maxPlayers === 0 ? '∞' : game.maxPlayers;
+      return `
+        <a href="${game.steamUrl}" target="_blank" class="game-link">
+          <div class="game-card">
+            <img src="${game.image}" class="game-image" alt="${game.name}">
+            <div class="game-info">
+              <h3 class="game-title">${game.name}</h3>
+              <div class="player-count">
+                ${game.minPlayers}-${maxP} Players
+              </div>
+              <div class="tags">
+                ${
+                  game.tags.map(tag => `
+                    <span class="tag" style="background-color: ${tagColors[tag]};">
+                      ${tagEmojis[tag] || ''} ${tag}
+                    </span>
+                  `).join('')
+                }
+              </div>
+            </div>
+          </div>
+        </a>
+      `;
+    }
+
+    const mainContainer = document.getElementById('mainContainer');
+    const randomGameBtn = document.getElementById('randomGameBtn');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalBox = document.getElementById('modalBox');
+
+    const randomInputSection = document.getElementById('randomInputSection');
+    const playerCountInput = document.getElementById('playerCountInput');
+    const modalTagButtons = document.getElementById('modalTagButtons');
+    const getRandomGameBtn = document.getElementById('getRandomGameBtn');
+
+    const randomResultSection = document.getElementById('randomResultSection');
+
+    const allTagKeys = [
+      "Sandbox","Minigame","Co-op","Versus","Chaotic","Party","Horror","Racing","Sports","Modded"
+    ];
+
+    allTagKeys.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.classList.add('modal-tag');
+      btn.dataset.tag = tag;
+      btn.textContent = (tagEmojis[tag] || '') + ' ' + tag;
+      btn.style.backgroundColor = tagColors[tag] || '#666';
+
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('selected');
+      });
+
+      modalTagButtons.appendChild(btn);
+    });
+
+    function openModal() {
+      modalOverlay.classList.add('active');
+      mainContainer.classList.add('blurred');
+
+      randomInputSection.classList.add('active');
+      randomResultSection.classList.remove('active');
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('active');
+      mainContainer.classList.remove('blurred');
+    }
+
+    randomGameBtn.addEventListener('click', () => {
+      openModal();
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        closeModal();
+      }
+    });
+
+    getRandomGameBtn.addEventListener('click', () => {
+      const numPlayers = parseInt(playerCountInput.value) || 1;
+
+      const selectedBtns = Array.from(document.querySelectorAll('.modal-tag.selected'));
+      const requestedTags = selectedBtns.map(btn => btn.dataset.tag);
+
+      const filteredList = games.filter(game => {
+        const effectiveMax = (game.maxPlayers === 0) ? Infinity : game.maxPlayers;
+        const playersMatch = (numPlayers >= game.minPlayers && numPlayers <= effectiveMax);
+
+        const tagsMatch = requestedTags.length === 0 ||
+                          requestedTags.every(t => game.tags.includes(t));
+
+        return playersMatch && tagsMatch;
+      });
+
+      if (filteredList.length === 0) {
+        alert("No games match your criteria!");
+        return;
+      }
+
+      const randomIndex = Math.floor(Math.random() * filteredList.length);
+      const chosenGame = filteredList[randomIndex];
+
+      randomResultSection.innerHTML = `
+        <div class="bounce-in">
+          ${createGameCard(chosenGame)}
+        </div>
+      `;
+
+      randomInputSection.classList.remove('active');
+      randomResultSection.classList.add('active');
+    });
+  </script>
+</body>
+</html>
