@@ -11,7 +11,7 @@
       --accent-color: #6f42c1; 
       --background-color: #121212;
       --text-color: #f5f5f5;
-      --container-bg: rgba(30, 30, 30, 0.6);
+      --container-bg: rgba(40, 40, 40, 0.6);
       --blur-level: 6px;
     }
 
@@ -1709,7 +1709,7 @@
 
       const filteredList = games.filter(game => {
         const effectiveMax = (game.maxPlayers === 0) ? Infinity : game.maxPlayers;
-        const playersMatch = (numPlayers >= game.minPlayers && numPlayers <= effectiveMax);
+        const playersMatch = (numPlayers >= game.minPlayers && game.maxPlayers <= effectiveMax);
 
         const tagsMatch = requestedTags.length === 0 ||
                           requestedTags.every(t => game.tags.includes(t));
